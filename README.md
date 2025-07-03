@@ -103,4 +103,3 @@ Reconeer can be used as a library. A minimal example is available [here](cmd/rec
 `Reconeer` is made with 🖤 by the [reconeer](https://reconeer.com) team. See the **[THANKS.md](https://github.com/reconeer/reconeer/blob/main/THANKS.md)** for contributions.
 
 Read the usage disclaimer at [DISCLAIMER.md](https://github.com/reconeer/reconeer/blob/main/DISCLAIMER.md) and [contact us](mailto:support@reconeer.com) for support.
-```
