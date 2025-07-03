@@ -1,3 +1,3 @@
-module github.com/reconeer/reconeer-client
+module github.com/reconeer/reconeer
 
-go 1.20
+go 1.21
