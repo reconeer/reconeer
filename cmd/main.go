@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -5,20 +6,9 @@ import (
     "flag"
     "fmt"
     "io"
-    "log"
     "net/http"
     "os"
-    "strings"
-    "time"
 )
-
-type ApiResponse struct {
-    Domain         string          `json:"domain"`
-    SubdomainCount int             `json:"subdomainCount"`
-    MostUsedIP     string          `json:"mostUsedIP"`
-    MostUsedCount  string          `json:"mostUsedCount"`
-    Subdomains     []SubdomainData `json:"subdomains"`
-}
 
 type SubdomainData struct {
     Subdomain       string  `json:"subdomain"`
@@ -28,30 +18,33 @@ type SubdomainData struct {
     ReverseResolves *bool   `json:"reverse_resolves"`
 }
 
-func fetchSubdomains(domain string) {
-    fmt.Println("Fetching for:", domain)
-    url := fmt.Sprintf("https://www.reconeer.com/api/domain/%s", domain)
+type APIResponse struct {
+    Domain          string          `json:"domain"`
+    SubdomainCount  int             `json:"subdomainCount"`
+    MostUsedIP      string          `json:"mostUsedIP"`
+    MostUsedCount   string          `json:"mostUsedCount"`
+    Subdomains      []SubdomainData `json:"subdomains"`
+}
 
-    client := &http.Client{Timeout: 60 * time.Second}
-    resp, err := client.Get(url)
+func fetchSubdomains(domain string) ([]SubdomainData, error) {
+    url := fmt.Sprintf("https://www.reconeer.com/api/domain/%s", domain)
+    resp, err := http.Get(url)
     if err != nil {
-        log.Fatalf("Failed to fetch data: %v", err)
+        return nil, err
     }
     defer resp.Body.Close()
 
+    var result APIResponse
     body, err := io.ReadAll(resp.Body)
     if err != nil {
-        log.Fatalf("Failed to read response: %v", err)
+        return nil, err
     }
 
-    var apiResp ApiResponse
-    if err := json.Unmarshal(body, &apiResp); err != nil {
-        log.Fatalf("Error: json: %v", err)
+    if err := json.Unmarshal(body, &result); err != nil {
+        return nil, err
     }
 
-    for _, sub := range apiResp.Subdomains {
-        fmt.Printf("%s -> %s\n", sub.Subdomain, sub.IP)
-    }
+    return result.Subdomains, nil
 }
 
 func main() {
@@ -59,26 +52,42 @@ func main() {
     domainList := flag.String("dL", "", "File with list of domains")
     flag.Parse()
 
-    if *domain != "" {
-        fetchSubdomains(*domain)
-    } else if *domainList != "" {
-        file, err := os.ReadFile(*domainList)
-        if err != nil {
-            log.Fatalf("Failed to read file: %v", err)
-        }
+    if *domain == "" && *domainList == "" {
+        fmt.Println("Usage of reconeer:")
+        fmt.Println("  -d string
+	Domain to fetch subdomains for")
+        fmt.Println("  -dL string
+	File with list of domains")
+        return
+    }
 
-        lines := strings.Split(string(file), "\n")
-        for _, line := range lines {
-            line = strings.TrimSpace(line)
-            if line != "" {
-                fetchSubdomains(line)
+    var domains []string
+
+    if *domain != "" {
+        domains = append(domains, *domain)
+    } else if *domainList != "" {
+        data, err := os.ReadFile(*domainList)
+        if err != nil {
+            fmt.Printf("Error reading file: %v\n", err)
+            return
+        }
+        for _, line := range string(data) {
+            if line != '\n' && line != '\r' {
+                domains = append(domains, string(line))
             }
         }
-    } else {
-        fmt.Println("Usage of reconeer:")
-        fmt.Println("  -d string")
-        fmt.Println("        Domain to fetch subdomains for")
-        fmt.Println("  -dL string")
-        fmt.Println("        File with list of domains")
+    }
+
+    for _, d := range domains {
+        fmt.Printf("Fetching for: %s\n", d)
+        subdomains, err := fetchSubdomains(d)
+        if err != nil {
+            fmt.Printf("Error: %v\n", err)
+            continue
+        }
+
+        for _, s := range subdomains {
+            fmt.Println(s.Subdomain)
+        }
     }
 }
