@@ -1,4 +1,3 @@
-```markdown
 <h1 align="center">
   <img src="static/reconeer-logo.png" alt="Reconeer" width="200px">
   <br>
