@@ -1,87 +1,77 @@
+
 package main
 
 import (
-	"bufio"
-	"encoding/json"
-	"flag"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
+    "encoding/json"
+    "flag"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "os"
+    "strings"
 )
 
-const apiBase = "https://www.reconeer.com/api"
-
-type SubdomainEntry struct {
-	Subdomain string `json:"subdomain"`
-	IP        string `json:"ip"`
+type SubdomainData struct {
+    Subdomain       string `json:"subdomain"`
+    IP              string `json:"ip"`
+    Domain          string `json:"domain"`
+    ReverseResolves *bool  `json:"reverse_resolves"`
 }
 
-func fetchSubdomains(domain string) ([]SubdomainEntry, error) {
-	url := fmt.Sprintf("%s/domain/%s", apiBase, domain)
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("failed to fetch: %s (%d)", domain, resp.StatusCode)
-	}
-
-	var result struct {
-		Subdomains []SubdomainEntry `json:"subdomains"`
-	}
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.Subdomains, nil
+type APIResponse struct {
+    Domain         string          `json:"domain"`
+    SubdomainCount int             `json:"subdomainCount"`
+    MostUsedIP     string          `json:"mostUsedIP"`
+    MostUsedCount  string          `json:"mostUsedCount"`
+    Subdomains     []SubdomainData `json:"subdomains"`
 }
 
-func handleDomain(domain string) {
-	subs, err := fetchSubdomains(domain)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[error] %s: %v\n", domain, err)
-		return
-	}
-	for _, entry := range subs {
-		fmt.Printf("%s,%s\n", entry.Subdomain, entry.IP)
-	}
-}
+func fetchSubdomains(domain string) {
+    fmt.Printf("Fetching for: %s\n", domain)
+    url := fmt.Sprintf("https://reconeer.com/api/domain/%s", domain)
+    resp, err := http.Get(url)
+    if err != nil {
+        log.Fatalf("Error fetching data: %v", err)
+    }
+    defer resp.Body.Close()
 
-func handleDomainList(path string) {
-	f, err := os.Open(path)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "[error] cannot open domain list file:", err)
-		return
-	}
-	defer f.Close()
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        log.Fatalf("Error reading response body: %v", err)
+    }
 
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		domain := strings.TrimSpace(scanner.Text())
-		if domain != "" {
-			handleDomain(domain)
-		}
-	}
+    var result APIResponse
+    err = json.Unmarshal(body, &result)
+    if err != nil {
+        log.Fatalf("Error decoding response: %v", err)
+    }
+
+    for _, sub := range result.Subdomains {
+        fmt.Println(sub.Subdomain)
+    }
 }
 
 func main() {
-	domain := flag.String("d", "", "Fetch subdomains for a single domain")
-	domainList := flag.String("dL", "", "Fetch subdomains for list of domains in file")
-	flag.Parse()
+    domain := flag.String("d", "", "Target domain")
+    domainList := flag.String("dL", "", "File with list of domains")
+    flag.Parse()
 
-	if *domain != "" {
-		handleDomain(*domain)
-	} else if *domainList != "" {
-		handleDomainList(*domainList)
-	} else {
-		fmt.Println("Usage: reconeer -d <domain> OR reconeer -dL <domain_list>")
-		os.Exit(1)
-	}
+    if *domain != "" {
+        fetchSubdomains(*domain)
+    } else if *domainList != "" {
+        content, err := ioutil.ReadFile(*domainList)
+        if err != nil {
+            log.Fatalf("Could not read domain list: %v", err)
+        }
+        lines := strings.Split(string(content), "\n")
+        for _, d := range lines {
+            if d != "" {
+                fetchSubdomains(d)
+            }
+        }
+    } else {
+        flag.Usage()
+        os.Exit(1)
+    }
 }

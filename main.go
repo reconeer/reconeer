@@ -1,91 +1,90 @@
 package main
 
 import (
-	"encoding/json"
-	"flag"
-	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"strings"
+    "bufio"
+    "flag"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "strings"
+    "io"
+    "encoding/json"
 )
 
-// Structs matching the API response
-type SubdomainEntry struct {
-	Subdomain       string `json:"subdomain"`
-	IP              string `json:"ip"`
-	Domain          string `json:"domain"`
-	ReverseResolves *bool  `json:"reverse_resolves"`
+type SubdomainData struct {
+    Subdomain string `json:"subdomain"`
+    IP        string `json:"ip"`
 }
 
-type APIResponse struct {
-	Domain         string           `json:"domain"`
-	SubdomainCount int              `json:"subdomainCount"`
-	MostUsedIP     string           `json:"mostUsedIP"`
-	MostUsedCount  string           `json:"mostUsedCount"`
-	Subdomains     []SubdomainEntry `json:"subdomains"`
+func fetchSubdomains(domain string) ([]SubdomainData, error) {
+    url := fmt.Sprintf("https://www.reconeer.com/api/domain/%s", domain)
+    resp, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API error: %s", resp.Status)
+    }
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, err
+    }
+
+    var results []SubdomainData
+    err = json.Unmarshal(body, &results)
+    return results, err
 }
 
-func fetchSubdomains(domain string) {
-	url := fmt.Sprintf("https://www.reconeer.com/api/domain/%s", domain)
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error fetching domain data: %v", err)
-	}
-	defer resp.Body.Close()
+func processDomains(domains []string) {
+    for _, domain := range domains {
+        fmt.Printf("Fetching for: %s\n", domain)
+        results, err := fetchSubdomains(domain)
+        if err != nil {
+            fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+            continue
+        }
 
-	if resp.StatusCode != 200 {
-		log.Fatalf("Error: Received status code %d from server", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error reading response: %v", err)
-	}
-
-	var result APIResponse
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		log.Fatalf("Error decoding response: %v", err)
-	}
-
-	for _, sub := range result.Subdomains {
-		fmt.Println(sub.Subdomain)
-	}
+        for _, entry := range results {
+            fmt.Printf("%s,%s\n", entry.Subdomain, entry.IP)
+        }
+    }
 }
 
 func main() {
-	domain := flag.String("d", "", "Fetch subdomains for a single domain")
-	domainList := flag.String("dL", "", "File with list of domains to fetch subdomains for")
-	flag.Parse()
+    singleDomain := flag.String("d", "", "Domain to fetch subdomains for")
+    domainList := flag.String("dL", "", "File with list of domains")
+    flag.Parse()
 
-	if *domain == "" && *domainList == "" {
-		fmt.Println("Usage:")
-		fmt.Println("  reconeer -d example.com")
-		fmt.Println("  reconeer -dL domains.txt")
-		os.Exit(1)
-	}
+    if *singleDomain == "" && *domainList == "" {
+        flag.Usage()
+        os.Exit(1)
+    }
 
-	if *domain != "" {
-		fmt.Println("Fetching for:", *domain)
-		fetchSubdomains(*domain)
-	}
+    var domains []string
+    if *singleDomain != "" {
+        domains = append(domains, *singleDomain)
+    }
 
-	if *domainList != "" {
-		data, err := os.ReadFile(*domainList)
-		if err != nil {
-			log.Fatalf("Error reading domain list: %v", err)
-		}
-		domains := strings.Split(string(data), "\n")
-		for _, d := range domains {
-			d = strings.TrimSpace(d)
-			if d == "" {
-				continue
-			}
-			fmt.Printf("\n--- %s ---\n", d)
-			fetchSubdomains(d)
-		}
-	}
+    if *domainList != "" {
+        file, err := os.Open(*domainList)
+        if err != nil {
+            log.Fatalf("Failed to open domain list: %v", err)
+        }
+        defer file.Close()
+
+        scanner := bufio.NewScanner(file)
+        for scanner.Scan() {
+            domains = append(domains, strings.TrimSpace(scanner.Text()))
+        }
+
+        if err := scanner.Err(); err != nil {
+            log.Fatalf("Scanner error: %v", err)
+        }
+    }
+
+    processDomains(domains)
 }
-
