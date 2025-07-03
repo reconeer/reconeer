@@ -1,24 +1,18 @@
-
 package main
 
 import (
     "encoding/json"
     "flag"
     "fmt"
-    "io/ioutil"
+    "io"
+    "log"
     "net/http"
     "os"
+    "strings"
+    "time"
 )
 
-type SubdomainData struct {
-    Subdomain       string `json:"subdomain"`
-    IP              string `json:"ip"`
-    Domain          string `json:"domain"`
-    Country         string `json:"country"`
-    ReverseResolves *bool  `json:"reverse_resolves"`
-}
-
-type APIResponse struct {
+type ApiResponse struct {
     Domain         string          `json:"domain"`
     SubdomainCount int             `json:"subdomainCount"`
     MostUsedIP     string          `json:"mostUsedIP"`
@@ -26,31 +20,36 @@ type APIResponse struct {
     Subdomains     []SubdomainData `json:"subdomains"`
 }
 
+type SubdomainData struct {
+    Subdomain       string  `json:"subdomain"`
+    IP              string  `json:"ip"`
+    Domain          string  `json:"domain"`
+    Country         *string `json:"country"`
+    ReverseResolves *bool   `json:"reverse_resolves"`
+}
+
 func fetchSubdomains(domain string) {
     fmt.Println("Fetching for:", domain)
-    url := fmt.Sprintf("https://reconeer.com/api/domain/%s", domain)
+    url := fmt.Sprintf("https://www.reconeer.com/api/domain/%s", domain)
 
-    resp, err := http.Get(url)
+    client := &http.Client{Timeout: 60 * time.Second}
+    resp, err := client.Get(url)
     if err != nil {
-        fmt.Println("Error fetching data:", err)
-        return
+        log.Fatalf("Failed to fetch data: %v", err)
     }
     defer resp.Body.Close()
 
-    body, err := ioutil.ReadAll(resp.Body)
+    body, err := io.ReadAll(resp.Body)
     if err != nil {
-        fmt.Println("Error reading response:", err)
-        return
+        log.Fatalf("Failed to read response: %v", err)
     }
 
-    var result APIResponse
-    err = json.Unmarshal(body, &result)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
+    var apiResp ApiResponse
+    if err := json.Unmarshal(body, &apiResp); err != nil {
+        log.Fatalf("Error: json: %v", err)
     }
 
-    for _, sub := range result.Subdomains {
+    for _, sub := range apiResp.Subdomains {
         fmt.Printf("%s -> %s\n", sub.Subdomain, sub.IP)
     }
 }
@@ -63,51 +62,23 @@ func main() {
     if *domain != "" {
         fetchSubdomains(*domain)
     } else if *domainList != "" {
-        file, err := os.Open(*domainList)
+        file, err := os.ReadFile(*domainList)
         if err != nil {
-            fmt.Println("Error reading domain list:", err)
-            return
-        }
-        defer file.Close()
-
-        var domains []string
-        buf := make([]byte, 1024)
-        for {
-            n, err := file.Read(buf)
-            if n > 0 {
-                content := string(buf[:n])
-                for _, line := range splitLines(content) {
-                    domains = append(domains, line)
-                }
-            }
-            if err != nil {
-                break
-            }
+            log.Fatalf("Failed to read file: %v", err)
         }
 
-        for _, d := range domains {
-            fetchSubdomains(d)
+        lines := strings.Split(string(file), "\n")
+        for _, line := range lines {
+            line = strings.TrimSpace(line)
+            if line != "" {
+                fetchSubdomains(line)
+            }
         }
     } else {
-        flag.Usage()
+        fmt.Println("Usage of reconeer:")
+        fmt.Println("  -d string")
+        fmt.Println("        Domain to fetch subdomains for")
+        fmt.Println("  -dL string")
+        fmt.Println("        File with list of domains")
     }
-}
-
-func splitLines(s string) []string {
-    var lines []string
-    current := ""
-    for _, r := range s {
-        if r == '\n' || r == '\r' {
-            if current != "" {
-                lines = append(lines, current)
-                current = ""
-            }
-        } else {
-            current += string(r)
-        }
-    }
-    if current != "" {
-        lines = append(lines, current)
-    }
-    return lines
 }
