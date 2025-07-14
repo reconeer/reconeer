@@ -10,7 +10,7 @@
   <a href="https://goreportcard.com/report/github.com/reconeer/reconeer"><img src="https://goreportcard.com/badge/github.com/reconeer/reconeer" alt="Go Report Card"></a>
   <a href="https://github.com/reconeer/reconeer/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="Contributions Welcome"></a>
   <a href="https://github.com/reconeer/reconeer/releases"><img src="https://img.shields.io/github/release/reconeer/reconeer" alt="GitHub Release"></a>
-  <a href="https://twitter.com/reconeer"><img src="https://img.shields.io/twitter/follow/reconeer.svg?logo=twitter" alt="Twitter Follow"></a>
+  <a href="https://x.com/reconeerx"><img src="https://img.shields.io/twitter/follow/reconeer.svg?logo=twitter" alt="Twitter Follow"></a>
   <a href="https://discord.gg/reconeer"><img src="https://img.shields.io/discord/123456789.svg?logo=discord" alt="Discord"></a>
 </div>
 
