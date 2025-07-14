@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="https://www.reconeer.com/styles.css">
 <div class="logo-container">
         <div class="hero-circle">
-          <img class="inner-img" src="static/buccaneer-logo.png" alt="Reconeer Logo" />
+          <img class="inner-img" src="static/reconeer-logo.png" alt="Reconeer Logo" />
           <div class="circle-line"></div>
           <div class="hero-rotate" id="circle">
             <div class="segment"></div>
