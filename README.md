@@ -50,7 +50,7 @@ The tool complies with the usage policies of the reconeer.com API. Its passive a
 # Features
 
 <h1 align="left">
-  <img src="static/reconeer-run.png" alt="Reconeer" width="700px">
+  <img src="static/reconeer-logo.png" alt="Reconeer" width="700px">
   <br>
 </h1>
 
