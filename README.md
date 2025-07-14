@@ -1,24 +1,5 @@
 <h1 align="center">
-  <svg width="200" height="200" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="75" cy="75" r="75" fill="none" stroke="black" />
-    <image href="static/reconeer-icon.png" x="35" y="35" width="80" height="80" />
-    <g id="hero-rotate">
-      <animateTransform attributeName="transform" type="rotate" from="0 75 75" to="360 75 75" dur="30s" repeatCount="indefinite"/>
-      <circle cx="150.0" cy="75.0" r="15.0" fill="rgba(255,255,255,0.8)" />
-      <circle cx="98.17627457812105" cy="146.3292387221365" r="15.0" fill="rgba(255,255,255,0.8)" />
-      <circle cx="14.323725421878947" cy="119.0838939219355" r="15.0" fill="rgba(255,255,255,0.8)" />
-      <circle cx="14.323725421878933" cy="30.916106078064523" r="15.0" fill="rgba(255,255,255,0.8)" />
-      <circle cx="98.17627457812104" cy="3.670761277863477" r="15.0" fill="rgba(255,255,255,0.8)" />
-      <rect x="140.77653323377163" y="89.93862482821741" width="20" height="4" rx="2" fill="#d8bffd" transform="rotate(110 150.77653323377163 91.93862482821741)" />
-      <rect x="112.16025403784438" y="134.68395609140177" width="20" height="4" rx="2" fill="#fffacd" transform="rotate(150 122.16025403784438 136.68395609140177)" />
-      <rect x="48.06137517178259" y="148.77653323377163" width="20" height="4" rx="2" fill="#b5e7a0" transform="rotate(200 58.06137517178259 150.77653323377163)" />
-      <rect x="3.3160439085982283" y="120.16025403784438" width="20" height="4" rx="2" fill="#f1948a" transform="rotate(240 13.316043908598228 122.16025403784438)" />
-      <rect x="-10.776533233771634" y="56.06137517178259" width="20" height="4" rx="2" fill="#85c1e9" transform="rotate(290 -0.7765332337716329 58.06137517178259)" />
-      <rect x="17.83974596215558" y="11.316043908598" width="20" height="4" rx="2" fill="#a2d9ce" transform="rotate(330 27.83974596215558 13.316043908598)" />
-      <rect x="81.93862482821743" y="-2.776533233771632" width="20" height="4" rx="2" fill="#f7dc6f" transform="rotate(380 91.93862482821743 -0.776533233771632)" />
-      <rect x="126.68395609140174" y="25.839745962155575" width="20" height="4" rx="2" fill="#d2b4de" transform="rotate(420 136.68395609140174 27.839745962155575)" />
-    </g>
-  </svg>
+  <img src="static/reconeer-logo.png" alt="Reconeer" width="200px">
   <br>
 </h1>
 
@@ -50,7 +31,7 @@ The tool complies with the usage policies of the reconeer.com API. Its passive a
 # Features
 
 <h1 align="left">
-  <img src="static/reconeer-logo.png" alt="Reconeer" width="700px">
+  <img src="static/reconeer-run.png" alt="Reconeer" width="700px">
   <br>
 </h1>
 
@@ -64,3 +45,61 @@ The tool complies with the usage policies of the reconeer.com API. Its passive a
 
 ```sh
 reconeer -h
+```
+
+This will display help for the tool. Here are the supported switches:
+
+```yaml
+Usage:
+  ./reconeer [flags]
+
+Flags:
+INPUT:
+  -d, -domain string[]  domains to enumerate subdomains for
+  -dL, -list string     file containing list of domains for enumeration
+
+RATE-LIMIT:
+  -rl, -rate-limit int  maximum number of API requests per second
+
+OUTPUT:
+  -o, -output string    file to write output to
+
+CONFIGURATION:
+  -config string        config file (default "$CONFIG/reconeer/config.yaml")
+
+DEBUG:
+  -silent             show only subdomains in output
+  -version            show version of reconeer
+  -v                  show verbose output
+  -nc, -no-color      disable color in output
+```
+
+# Installation
+
+`Reconeer` requires **go1.24** to install successfully. Run the following command to install the latest version:
+
+```sh
+go install -v github.com/reconeer/reconeer/cmd/reconeer@latest
+```
+
+## API Setup
+
+After installation, configure your reconeer.com API key. Learn more here: https://docs.reconeer.com/setup.
+
+## Running Reconeer
+
+Learn about how to run Reconeer here: https://docs.reconeer.com/running.
+
+## Reconeer Go Library
+
+Reconeer can be used as a library. A minimal example is available [here](cmd/reconeer/examples/main.go).
+
+### Resources
+
+- [Recon with Reconeer!](https://reconeer.com/blog/recon-guide)
+
+# License
+
+`Reconeer` is made with 🖤 by the [reconeer](https://reconeer.com) team. See the **[THANKS.md](https://github.com/reconeer/reconeer/blob/main/THANKS.md)** for contributions.
+
+Read the usage disclaimer at [DISCLAIMER.md](https://github.com/reconeer/reconeer/blob/main/DISCLAIMER.md) and [contact us](mailto:support@reconeer.com) for support.
