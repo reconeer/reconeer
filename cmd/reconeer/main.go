@@ -77,7 +77,7 @@ func main() {
 	}
 
 	for _, d := range domains {
-		fmt.Printf("Fetching for: %s\n", d)
+		//fmt.Printf("Fetching for: %s\n", d)
 		subdomains, err := fetchSubdomains(d)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
