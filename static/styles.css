@@ -1,0 +1,208 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background: #f4f6fb;
+  color: #202124;
+}
+
+header {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.logo-container {
+  --circleDiameter: 150px;
+  --planets: calc(var(--circleDiameter) / 5);
+  --radius: calc(var(--circleDiameter) / 2);
+  position: relative;
+  width: var(--circleDiameter);
+  height: var(--circleDiameter);
+}
+
+.inner-img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 80px;
+  height: auto;
+}
+
+.circle-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid black;
+}
+
+.hero-rotate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  animation: rotate 30s linear infinite;
+}
+
+.segment {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color);
+  transform: translate(-50%, -50%) rotate(var(--angle)) translate(var(--radius)) rotate(90deg) translate(-10px, -2px);
+}
+
+.segment:nth-child(1) { --angle: 20deg; --color: #d8bffd; }
+.segment:nth-child(2) { --angle: 60deg; --color: #fffacd; }
+.segment:nth-child(3) { --angle: 110deg; --color: #b5e7a0; }
+.segment:nth-child(4) { --angle: 150deg; --color: #f1948a; }
+.segment:nth-child(5) { --angle: 200deg; --color: #85c1e9; }
+.segment:nth-child(6) { --angle: 240deg; --color: #a2d9ce; }
+.segment:nth-child(7) { --angle: 290deg; --color: #f7dc6f; }
+.segment:nth-child(8) { --angle: 330deg; --color: #d2b4de; }
+
+.planet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--planets);
+  height: var(--planets);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotate(var(--angle)) translate(var(--radius)) rotate(calc(-1 * var(--angle)));
+}
+
+.planet:nth-child(9) { --angle: 0deg; }
+.planet:nth-child(10) { --angle: 72deg; }
+.planet:nth-child(11) { --angle: 144deg; }
+.planet:nth-child(12) { --angle: 216deg; }
+.planet:nth-child(13) { --angle: 288deg; }
+
+.icon {
+  width: 100%;
+  height: 100%;
+  color: #5383ec;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.main-title {
+  font-size: 40px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #333;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 18px 30px;
+  border-radius: 30px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.brand {
+  color: #5383ec;
+  font-weight: 700;
+}
+
+.tagline {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.search-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  margin-top: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: #5383ec;
+  box-shadow: 0 0 0 4px rgba(83, 131, 236, 0.2);
+  outline: none;
+}
+
+.search-btn-glass {
+  margin-top: 20px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #5383ec;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.search-btn-glass:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(1.04);
+  color: #3d6be5;
+}
+
+.loading {
+  font-size: 16px;
+  color: #666;
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .main-title {
+    font-size: 28px;
+    padding: 12px 20px;
+  }
+  .search-input {
+    width: 100%;
+    max-width: 300px;
+  }
+  .search-btn-glass {
+    width: 100%;
+    max-width: 150px;
+  }
+}

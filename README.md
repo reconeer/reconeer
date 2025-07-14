@@ -1,5 +1,5 @@
 <h1 align="center">
-<link rel="stylesheet" href="https://www.reconeer.com/styles.css">
+<link rel="stylesheet" href="static/styles.css">
 <div class="logo-container">
         <div class="hero-circle">
           <img class="inner-img" src="static/reconeer-logo.png" alt="Reconeer Logo" />
