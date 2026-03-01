@@ -1,107 +1,173 @@
-# Reconeer
+# Reconeer CLI
 
 <div align="center">
-  <img src="static/reconeer-logo.png" alt="Reconeer" width="200">
+  <img src="static/reconeer-logo.png" alt="Reconeer" width="180">
 </div>
 
-<h4 align="center">A high-performance subdomain enumeration client for the reconeer.com API.</h4>
+<p align="center">
+  <b>Passive subdomain enumeration</b> powered by the <a href="https://www.reconeer.com/docs.html">reconeer.com API</a>.
+  Built for recon pipelines, bug bounty workflows, and automation.
+</p>
 
 <div align="center">
+  <a href="https://github.com/reconeer/reconeer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/reconeer/reconeer/ci.yml?branch=main" alt="CI"></a>
   <a href="https://goreportcard.com/report/github.com/reconeer/reconeer"><img src="https://goreportcard.com/badge/github.com/reconeer/reconeer" alt="Go Report Card"></a>
-  <a href="https://github.com/reconeer/reconeer/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="Contributions Welcome"></a>
-  <a href="https://github.com/reconeer/reconeer/releases"><img src="https://img.shields.io/github/release/reconeer/reconeer" alt="GitHub Release"></a>
-  <a href="https://x.com/reconeerx"><img src="https://img.shields.io/twitter/follow/reconeer.svg?logo=twitter" alt="Twitter Follow"></a>
-  <a href="https://discord.gg/reconeer"><img src="https://img.shields.io/discord/123456789.svg?logo=discord" alt="Discord"></a>
-</div>
-
-<div align="center">
-  <a href="#features">Features</a> •
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#api-setup">API Setup</a> •
-  <a href="#reconeer-go-library">Go Library</a> •
-  <a href="https://discord.gg/reconeer">Join Discord</a>
+  <a href="https://github.com/reconeer/reconeer/releases"><img src="https://img.shields.io/github/v/release/reconeer/reconeer" alt="Release"></a>
+  <a href="https://discord.gg/reconeer"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://x.com/reconeerx"><img src="https://img.shields.io/twitter/follow/reconeerx?logo=twitter" alt="X"></a>
+  <a href="https://www.reconeer.com/signup?utm_source=github&utm_medium=badge&utm_campaign=oss_funnel"><img src="https://img.shields.io/badge/Get%20API%20Key-free-success" alt="Get API Key"></a>
 </div>
 
 ---
 
-Reconeer is a specialized subdomain enumeration tool designed to identify valid subdomains for target domains using the reconeer.com API. It employs a modular and efficient architecture to deliver rapid results. Focused exclusively on passive subdomain enumeration, Reconeer excels in providing discreet and high-speed discovery, making it an essential asset for security professionals, penetration testers, and bug bounty researchers.
+## Why Reconeer?
 
-While the reconeer.com website offers a user-friendly graphical interface (UI) for subdomain enumeration, Reconeer serves as a command-line interface (CLI) client that interacts directly with the reconeer.com API to fetch data programmatically. This API-driven approach ensures compliance with reconeer.com's usage policies and enables seamless integration into automated workflows. For more information on reconeer.com's services, visit [reconeer.com](https://reconeer.com).
+Reconeer is **passive-only**: it returns intelligence from previously observed infrastructure (no brute forcing, no DNS guessing, no active probing).
+That makes it safe to run continuously in automation.
+
+- ✅ Fast passive subdomain enumeration
+- ✅ CLI built for pipelines (STDIN/STDOUT)
+- ✅ Optional API key support (`X-API-Key`) for higher limits and isolation
+- ✅ Designed to integrate with recon tooling and custom scripts
+
+---
+
+## Quick start
+
+### 1) Get a free API key (recommended)
+
+Create a free account (10 API queries/day):
+
+- https://www.reconeer.com/signup?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
+
+Set your key:
+
+```bash
+export RECONEER_API_KEY="your_key_here"
+```
+
+### 2) Enumerate a domain
+
+```bash
+reconeer -d example.com
+```
+
+Write to a file:
+
+```bash
+reconeer -d example.com -o results.txt
+```
+
+### 3) Bulk enumerate many domains
+
+```bash
+reconeer -dL domains.txt -o results.txt
+```
+
+> If you hit the free daily limit, Reconeer will tell you and include a direct upgrade link.
 
 <div align="left">
   <img src="static/reconeer-run.png" alt="Reconeer in action" width="700">
 </div>
 
-## Features
-
-- High-speed subdomain enumeration powered by the reconeer.com API
-- Curated API integration for accurate and reliable results
-- Support for multiple input and output formats (files, stdout)
-- Lightweight design with minimal resource consumption
-- STDIN/STDOUT compatibility for easy pipeline integration
-
-## Usage
-
-To view the help menu, run:
-
-```sh
-reconeer -h
-```
-
-The tool supports the following options:
-
-```yaml
-Usage:
-  ./reconeer [flags]
-
-Flags:
-INPUT:
-  -d, -domain string[]  domains to enumerate subdomains for
-  -dL, -list string     file containing list of domains for enumeration
-
-RATE-LIMIT:
-  -rl, -rate-limit int  maximum number of API requests per second
-
-OUTPUT:
-  -o, -output string    file to write output to
-
-CONFIGURATION:
-  -config string        config file (default "$CONFIG/reconeer/config.yaml")
-
-DEBUG:
-  -silent             show only subdomains in output
-  -version            show version of reconeer
-  -v                  show verbose output
-  -nc, -no-color      disable color in output
-```
+---
 
 ## Installation
 
-Reconeer requires Go version 1.24 or higher for installation. Install the latest version using the following command:
+### Option A: download a release binary
+Grab the latest release from GitHub releases:
+- https://github.com/reconeer/reconeer/releases
 
-```sh
+### Option B: install with Go
+
+Requires Go **1.22+**.
+
+```bash
 go install -v github.com/reconeer/reconeer/cmd/reconeer@latest
 ```
 
-## API Setup
+---
 
-After installation, configure your reconeer.com API key to enable access to the subdomain enumeration service. For detailed setup instructions, refer to the API documentation available on [reconeer.com](https://reconeer.com).
+## Usage
 
-## Running Reconeer
+```text
+reconeer -d example.com
+reconeer -dL domains.txt
+cat domains.txt | reconeer
+```
 
-To get started with running Reconeer, consult the usage guidelines and examples provided on [reconeer.com](https://reconeer.com).
+Flags:
 
-## Reconeer Go Library
+```text
+INPUT
+  -d, --domain <domain>       Domain to enumerate (repeatable)
+  -dL, --list <file>          File with one domain per line; supports "-" for STDIN
 
-Reconeer can also be utilized as a Go library for custom integrations. A minimal example is available [here](cmd/reconeer/examples/main.go).
+AUTH
+  -k, --api-key <key>         API key (or set RECONEER_API_KEY)
 
-### Resources
+RATE LIMIT
+  -rl, --rate-limit <n>       Max requests per second (client-side). Default: 3
 
-- [Recon with Reconeer!](https://reconeer.com/blog/recon-guide)
+OUTPUT
+  -o, --output <file>         Write output to file (default: STDOUT)
+  --jsonl                      Output JSON Lines (one object per subdomain)
 
-## License
+MISC
+  -silent                      Print only subdomains (no banners/logs)
+  -v, --verbose                Verbose logging
+  -version                     Print version
+  -h, --help                   Help
+```
 
-Reconeer is developed with passion by the [reconeer.com](https://reconeer.com) team. We extend our gratitude to all contributors—see **[THANKS.md](https://github.com/reconeer/reconeer/blob/main/THANKS.md)** for details.
+---
 
-Please review the usage disclaimer in **[DISCLAIMER.md](https://github.com/reconeer/reconeer/blob/main/DISCLAIMER.md)**. For support inquiries, contact us at [support@reconeer.com](mailto:support@reconeer.com).
+## Free vs Premium (why upgrade?)
+
+Reconeer pricing: https://www.reconeer.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
+
+**Free ($0/mo)**  
+- 10 API queries/day
+- Basic subdomain enumeration
+- CLI access
+
+**Premium ($49/mo)**  
+- Unlimited API queries
+- Advanced analytics
+- Priority integrations & early access
+- Email support
+
+---
+
+## Integrations
+
+### subfinder
+Reconeer is designed to slot into recon pipelines. If you already use subfinder, add Reconeer as a passive source and provide your API key.
+
+### Example pipeline
+```bash
+subfinder -d example.com -silent | sort -u | tee subs.txt
+cat subs.txt | httpx -silent
+```
+
+---
+
+## Developer docs
+
+- API docs: https://www.reconeer.com/docs.html
+- Guides:
+  - docs/bugbounty-pipeline.md
+  - docs/ci-monitoring.md
+
+---
+
+## Contributing
+
+See **CONTRIBUTING.md** and open an issue. Good-first-issues are tagged.
+
+---
+
+## License & safety
+
+This project is intended for legitimate security testing and research.  
+See **DISCLAIMER.md** and **SECURITY.md**.
