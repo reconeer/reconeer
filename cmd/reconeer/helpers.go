@@ -115,7 +115,7 @@ func normalizeDomains(in []string) []string {
 }
 
 func printHelpHint() {
-	fmt.Fprintln(os.Stderr, "Usage: reconeer -d example.com | reconeer -dL domains.txt")
+	fmt.Fprintln(os.Stderr, "Usage: reconeer -d example.com | reconeer -dL domains.txt| use with key: reconeer -d post.ch -k f8af6b1a-79e8-xxxx-xxxx-7c9593674253")
 }
 
 func outputWriter(path string) (io.Writer, func(), error) {
