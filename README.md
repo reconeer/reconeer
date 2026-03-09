@@ -15,7 +15,7 @@
   <a href="https://github.com/reconeer/reconeer/releases"><img src="https://img.shields.io/github/v/release/reconeer/reconeer" alt="Release"></a>
   <a href="https://discord.gg/reconeer"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://x.com/reconeerx"><img src="https://img.shields.io/twitter/follow/reconeerx?logo=twitter" alt="X"></a>
-  <a href="https://www.reconeer.com/signup?utm_source=github&utm_medium=badge&utm_campaign=oss_funnel"><img src="https://img.shields.io/badge/Get%20API%20Key-free-success" alt="Get API Key"></a>
+  <a href="https://www.reconeer.com/register?utm_source=github&utm_medium=badge&utm_campaign=oss_funnel"><img src="https://img.shields.io/badge/Get%20API%20Key-free-success" alt="Get API Key"></a>
 </div>
 
 ---
@@ -38,7 +38,7 @@ That makes it safe to run continuously in automation.
 
 Create a free account (10 API queries/day):
 
-- https://www.reconeer.com/signup?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
+- https://www.reconeer.com/register?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
 
 Set your key:
 

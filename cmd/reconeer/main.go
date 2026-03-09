@@ -43,7 +43,7 @@ var (
 
 const (
 	defaultBaseURL = "https://www.reconeer.com"
-	signupURL      = "https://www.reconeer.com/signup?utm_source=cli&utm_medium=prompt&utm_campaign=oss_funnel"
+	signupURL      = "https://www.reconeer.com/register?utm_source=cli&utm_medium=prompt&utm_campaign=oss_funnel"
 	pricingURL     = "https://www.reconeer.com/pricing?utm_source=cli&utm_medium=prompt&utm_campaign=oss_funnel"
 )
 
