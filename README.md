@@ -1,173 +1,221 @@
-# Reconeer CLI
+# Reconeer
 
-<div align="center">
-  <img src="static/reconeer-logo.png" alt="Reconeer" width="180">
-</div>
+Reconeer is a passive subdomain enumeration tool powered by the Reconeer API.
 
-<p align="center">
-  <b>Passive subdomain enumeration</b> powered by the <a href="https://www.reconeer.com/docs.html">reconeer.com API</a>.
-  Built for recon pipelines, bug bounty workflows, and automation.
-</p>
-
-<div align="center">
-  <a href="https://github.com/reconeer/reconeer/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/reconeer/reconeer/ci.yml?branch=main" alt="CI"></a>
-  <a href="https://goreportcard.com/report/github.com/reconeer/reconeer"><img src="https://goreportcard.com/badge/github.com/reconeer/reconeer" alt="Go Report Card"></a>
-  <a href="https://github.com/reconeer/reconeer/releases"><img src="https://img.shields.io/github/v/release/reconeer/reconeer" alt="Release"></a>
-  <a href="https://discord.gg/reconeer"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://x.com/reconeerx"><img src="https://img.shields.io/twitter/follow/reconeerx?logo=twitter" alt="X"></a>
-  <a href="https://www.reconeer.com/register?utm_source=github&utm_medium=badge&utm_campaign=oss_funnel"><img src="https://img.shields.io/badge/Get%20API%20Key-free-success" alt="Get API Key"></a>
-</div>
+It provides fast and reliable subdomain discovery using Reconeer’s continuously updated dataset.
 
 ---
 
-## Why Reconeer?
+# Features
 
-Reconeer is **passive-only**: it returns intelligence from previously observed infrastructure (no brute forcing, no DNS guessing, no active probing).
-That makes it safe to run continuously in automation.
-
-- ✅ Fast passive subdomain enumeration
-- ✅ CLI built for pipelines (STDIN/STDOUT)
-- ✅ Optional API key support (`X-API-Key`) for higher limits and isolation
-- ✅ Designed to integrate with recon tooling and custom scripts
+* Passive subdomain enumeration
+* High-quality curated dataset
+* JSON output support
+* Optional API authentication
+* Rate limiting support
+* Concurrent scanning
+* Automatic version update checks
 
 ---
 
-## Quick start
+# Installation
 
-### 1) Get a free API key (recommended)
-
-Create a free account (10 API queries/day):
-
-- https://www.reconeer.com/register?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
-
-Set your key:
+Clone and build the CLI:
 
 ```bash
-export RECONEER_API_KEY="your_key_here"
+git clone https://github.com/reconeer/reconeer
+cd reconeer
+go build -o reconeer ./cmd/reconeer
 ```
 
-### 2) Enumerate a domain
+Move it to your PATH if desired:
+
+```bash
+sudo mv reconeer /usr/local/bin/
+```
+
+Verify installation:
+
+```bash
+reconeer -version
+```
+
+---
+
+# Usage
+
+Basic scan:
 
 ```bash
 reconeer -d example.com
 ```
 
-Write to a file:
+Scan multiple domains:
+
+```bash
+reconeer -d example.com -d example.org
+```
+
+Scan domains from file:
+
+```bash
+reconeer -dL domains.txt
+```
+
+Increase concurrency:
+
+```bash
+reconeer -dL domains.txt -t 10
+```
+
+Write results to file:
 
 ```bash
 reconeer -d example.com -o results.txt
 ```
 
-### 3) Bulk enumerate many domains
+JSON output:
 
 ```bash
-reconeer -dL domains.txt -o results.txt
+reconeer -d example.com -jsonl
 ```
 
-> If you hit the free daily limit, Reconeer will tell you and include a direct upgrade link.
-
-<div align="left">
-  <img src="static/reconeer-run.png" alt="Reconeer in action" width="700">
-</div>
-
----
-
-## Installation
-
-### Option A: download a release binary
-Grab the latest release from GitHub releases:
-- https://github.com/reconeer/reconeer/releases
-
-### Option B: install with Go
-
-Requires Go **1.22+**.
+Silent output:
 
 ```bash
-go install -v github.com/reconeer/reconeer/cmd/reconeer@latest
+reconeer -d example.com -silent
 ```
 
 ---
 
-## Usage
+# Authentication
 
-```text
+Reconeer supports optional API keys for higher rate limits.
+
+You can provide your API key in two ways.
+
+### CLI flag
+
+```bash
+reconeer -d example.com -k YOUR_API_KEY
+```
+
+### Environment variable
+
+```bash
+export RECONEER_API_KEY=YOUR_API_KEY
 reconeer -d example.com
-reconeer -dL domains.txt
-cat domains.txt | reconeer
 ```
 
-Flags:
+Internally the CLI sends requests using:
 
-```text
-INPUT
-  -d, --domain <domain>       Domain to enumerate (repeatable)
-  -dL, --list <file>          File with one domain per line; supports "-" for STDIN
-
-AUTH
-  -k, --api-key <key>         API key (or set RECONEER_API_KEY)
-
-RATE LIMIT
-  -rl, --rate-limit <n>       Max requests per second (client-side). Default: 3
-
-OUTPUT
-  -o, --output <file>         Write output to file (default: STDOUT)
-  --jsonl                      Output JSON Lines (one object per subdomain)
-
-MISC
-  -silent                      Print only subdomains (no banners/logs)
-  -v, --verbose                Verbose logging
-  -version                     Print version
-  -h, --help                   Help
+```
+Authorization: Bearer <API_KEY>
 ```
 
 ---
 
-## Free vs Premium (why upgrade?)
+# Example API Request
 
-Reconeer pricing: https://www.reconeer.com/pricing?utm_source=github&utm_medium=readme&utm_campaign=oss_funnel
+You can also query the API directly.
 
-**Free ($0/mo)**  
-- 10 API queries/day
-- Basic subdomain enumeration
-- CLI access
-
-**Premium ($49/mo)**  
-- Unlimited API queries
-- Advanced analytics
-- Priority integrations & early access
-- Email support
-
----
-
-## Integrations
-
-### subfinder
-Reconeer is designed to slot into recon pipelines. If you already use subfinder, add Reconeer as a passive source and provide your API key.
-
-### Example pipeline
 ```bash
-subfinder -d example.com -silent | sort -u | tee subs.txt
-cat subs.txt | httpx -silent
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+https://www.reconeer.com/api/domain/example.com
+```
+
+Example response:
+
+```json
+{
+  "subdomains": [
+    {"subdomain":"api.example.com"},
+    {"subdomain":"mail.example.com"}
+  ]
+}
 ```
 
 ---
 
-## Developer docs
+# Output
 
-- API docs: https://www.reconeer.com/docs.html
-- Guides:
-  - docs/bugbounty-pipeline.md
-  - docs/ci-monitoring.md
+Default output:
+
+```
+api.example.com
+mail.example.com
+dev.example.com
+```
+
+JSONL output:
+
+```json
+{"subdomain":"api.example.com"}
+{"subdomain":"mail.example.com"}
+```
 
 ---
 
-## Contributing
+# Rate Limits
 
-See **CONTRIBUTING.md** and open an issue. Good-first-issues are tagged.
+Free tier:
+
+* 10 queries per day
+
+Using an API key provides higher limits and isolation.
+
+Register for a free API key:
+
+https://www.reconeer.com/register
 
 ---
 
-## License & safety
+# Updating
 
-This project is intended for legitimate security testing and research.  
-See **DISCLAIMER.md** and **SECURITY.md**.
+Check for updates:
+
+```bash
+reconeer -update
+```
+
+You can also download the latest release manually:
+
+https://github.com/reconeer/reconeer/releases
+
+---
+
+# CLI Flags
+
+| Flag       | Description             |
+| ---------- | ----------------------- |
+| `-d`       | Domain to enumerate     |
+| `-dL`      | File containing domains |
+| `-k`       | API key                 |
+| `-rl`      | Requests per second     |
+| `-t`       | Number of workers       |
+| `-o`       | Output file             |
+| `-jsonl`   | JSONL output            |
+| `-silent`  | Only print subdomains   |
+| `-v`       | Verbose logging         |
+| `-version` | Print version           |
+| `-update`  | Check for updates       |
+
+---
+
+# License
+
+MIT License
+
+---
+
+# Links
+
+Website
+https://www.reconeer.com
+
+API documentation
+https://www.reconeer.com/docs
+
+Register for API key
+https://www.reconeer.com/register
+
