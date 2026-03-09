@@ -20,6 +20,15 @@ It provides fast and reliable subdomain discovery using Reconeer’s continuousl
 
 # Installation
 
+Direct install
+
+```
+go install -v github.com/reconeer/reconeer/cmd/reconeer@latest
+```
+
+or
+
+
 Clone and build the CLI:
 
 ```bash
