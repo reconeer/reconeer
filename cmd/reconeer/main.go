@@ -45,6 +45,8 @@ const (
 	defaultBaseURL = "https://www.reconeer.com"
 	signupURL      = "https://www.reconeer.com/register?utm_source=cli&utm_medium=prompt&utm_campaign=oss_funnel"
 	pricingURL     = "https://www.reconeer.com/pricing?utm_source=cli&utm_medium=prompt&utm_campaign=oss_funnel"
+
+	updateAPI = "https://api.github.com/repos/reconeer/reconeer/releases/latest"
 )
 
 func main() {
@@ -58,7 +60,6 @@ func main() {
 	var jsonl bool
 	var showVersion bool
 
-	// Support both short and long flags
 	flag.Var(&domains, "d", "Domain to enumerate (repeatable)")
 	flag.Var(&domains, "domain", "Domain to enumerate (repeatable)")
 	flag.StringVar(&listFile, "dL", "", "File with one domain per line; supports '-' for STDIN")
@@ -78,14 +79,16 @@ func main() {
 	flag.BoolVar(&verbose, "v", false, "Verbose logging")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose logging")
 	flag.BoolVar(&showVersion, "version", false, "Print version")
+
 	flag.Parse()
+
+	checkLatestVersion(version, silent)
 
 	if showVersion {
 		fmt.Printf("reconeer %s (commit %s, built %s)\n", version, commit, date)
 		return
 	}
 
-	// Domain sources: flags + list + stdin (if piped and no listFile)
 	inputDomains := make([]string, 0, 32)
 	inputDomains = append(inputDomains, domains...)
 
@@ -94,7 +97,6 @@ func main() {
 		fatalIf(err, silent, "failed reading domain list: %v", err)
 		inputDomains = append(inputDomains, ds...)
 	} else {
-		// If stdin is piped, read domains from stdin too
 		fi, _ := os.Stdin.Stat()
 		if (fi.Mode() & os.ModeCharDevice) == 0 {
 			ds, err := readDomainsFromReader(os.Stdin)
@@ -132,6 +134,7 @@ func main() {
 
 	for _, d := range inputDomains {
 		limiter.Wait()
+
 		if verbose && !silent {
 			fmt.Fprintf(os.Stderr, "[*] querying %s\n", d)
 		}
@@ -146,9 +149,11 @@ func main() {
 			if s.Subdomain == "" {
 				continue
 			}
+
 			if _, ok := seen[s.Subdomain]; ok {
 				continue
 			}
+
 			seen[s.Subdomain] = struct{}{}
 
 			if jsonl {
@@ -161,154 +166,36 @@ func main() {
 	}
 
 	if !silent && len(seen) == 0 {
-		fmt.Fprintf(os.Stderr, "No results. If this is unexpected, check docs: https://www.reconeer.com/docs.html\n")
+		fmt.Fprintf(os.Stderr, "No results. Docs: https://www.reconeer.com/docs.html\n")
 	}
 }
 
-func printHelpHint() {
-	fmt.Fprintln(os.Stderr, "No domains provided.\nUsage: reconeer -d example.com | reconeer -dL domains.txt | cat domains.txt | reconeer\nRun: reconeer -h")
-}
-
-func fatalIf(err error, silent bool, format string, args ...any) {
-	if err == nil {
+func checkLatestVersion(current string, silent bool) {
+	if silent || current == "dev" {
 		return
 	}
-	if !silent {
-		fmt.Fprintf(os.Stderr, "[!] "+format+"\n", args...)
-	}
-	os.Exit(1)
-}
 
-func outputWriter(path string) (io.Writer, func(), error) {
-	if strings.TrimSpace(path) == "" {
-		return os.Stdout, func() {}, nil
-	}
-	dir := filepath.Dir(path)
-	if dir != "." && dir != "" {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return nil, func() {}, err
-		}
-	}
-	f, err := os.Create(path)
+	client := &http.Client{Timeout: 5 * time.Second}
+
+	resp, err := client.Get(updateAPI)
 	if err != nil {
-		return nil, func() {}, err
-	}
-	return f, func() { _ = f.Close() }, nil
-}
-
-func readDomainsFromFileOrStdin(path string) ([]string, error) {
-	if path == "-" {
-		return readDomainsFromReader(os.Stdin)
-	}
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	return readDomainsFromReader(f)
-}
-
-func readDomainsFromReader(r io.Reader) ([]string, error) {
-	sc := bufio.NewScanner(r)
-	sc.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
-
-	var out []string
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		out = append(out, line)
-	}
-	return out, sc.Err()
-}
-
-func normalizeDomains(in []string) []string {
-	out := make([]string, 0, len(in))
-	seen := make(map[string]struct{}, len(in))
-	for _, d := range in {
-		d = strings.TrimSpace(d)
-		d = strings.TrimPrefix(d, "http://")
-		d = strings.TrimPrefix(d, "https://")
-		d = strings.TrimSuffix(d, "/")
-		d = strings.ToLower(d)
-		if d == "" {
-			continue
-		}
-		if _, ok := seen[d]; ok {
-			continue
-		}
-		seen[d] = struct{}{}
-		out = append(out, d)
-	}
-	return out
-}
-
-func fetchDomain(ctx context.Context, client *http.Client, domain, apiKey string) ([]SubdomainData, int, error) {
-	url := fmt.Sprintf("%s/api/domain/%s", defaultBaseURL, domain)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, 0, err
-	}
-	if apiKey != "" {
-		req.Header.Set("X-API-Key", apiKey)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, 0, fmt.Errorf("request failed: %w", err)
+		return
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("read failed: %w", err)
+	type release struct {
+		Tag string `json:"tag_name"`
 	}
 
-	if resp.StatusCode >= 400 {
-		msg := strings.TrimSpace(string(body))
-		if msg == "" {
-			msg = http.StatusText(resp.StatusCode)
-		}
-		return nil, resp.StatusCode, fmt.Errorf("api error (%d): %s", resp.StatusCode, msg)
-	}
-
-	var parsed apiDomainResponse
-	if err := json.Unmarshal(body, &parsed); err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("parse failed: %w", err)
-	}
-	return parsed.Subdomains, resp.StatusCode, nil
-}
-
-func handleAPIError(err error, status int, silent bool) {
-	if silent {
+	var r release
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return
 	}
-	switch status {
-	case http.StatusTooManyRequests:
-		fmt.Fprintf(os.Stderr, "[!] Rate limit reached (HTTP 429).\n")
-		fmt.Fprintf(os.Stderr, "    Free tier is limited (10 queries/day). Upgrade for unlimited queries:\n")
-		fmt.Fprintf(os.Stderr, "    %s\n", pricingURL)
-		return
-	case http.StatusUnauthorized, http.StatusForbidden:
-		fmt.Fprintf(os.Stderr, "[!] Access denied (%d). If you're using an API key, verify it.\n", status)
-		fmt.Fprintf(os.Stderr, "    Get a free key: %s\n", signupURL)
-		return
+
+	latest := strings.TrimPrefix(r.Tag, "v")
+
+	if latest != "" && latest != current {
+		fmt.Fprintf(os.Stderr, "\n[!] New version available: %s (current: %s)\n", latest, current)
+		fmt.Fprintf(os.Stderr, "    Update: https://github.com/reconeer/reconeer/releases\n\n")
 	}
-	fmt.Fprintf(os.Stderr, "[!] %v\n", err)
 }
-
-type rateLimiter struct {
-	ch <-chan time.Time
-}
-
-func newRateLimiter(rps int) *rateLimiter {
-	if rps <= 0 {
-		rps = 3
-	}
-	interval := time.Second / time.Duration(rps)
-	t := time.NewTicker(interval)
-	return &rateLimiter{ch: t.C}
-}
-
-func (r *rateLimiter) Wait() { <-r.ch }
