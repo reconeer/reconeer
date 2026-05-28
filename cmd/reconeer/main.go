@@ -11,12 +11,20 @@ import (
 	"time"
 )
 type SubdomainData struct {
-	Subdomain string `json:"subdomain"`
-	IP        string `json:"ip,omitempty"`
+	Subdomain       string `json:"subdomain"`
+	IP              string `json:"ip,omitempty"`
+	Country         string `json:"country,omitempty"`
+	ReverseResolves bool   `json:"reverse_resolves,omitempty"`
+}
+
+type IPStat struct {
+	IP    string `json:"ip"`
+	Count int    `json:"count"`
 }
 
 type apiDomainResponse struct {
 	Subdomains []SubdomainData `json:"subdomains"`
+	IPStats    []IPStat        `json:"ipStats,omitempty"`
 }
 
 type stringSlice []string
@@ -162,7 +170,7 @@ func main() {
 	}
 
 	if !silent && len(seen) == 0 {
-		fmt.Fprintf(os.Stderr, "No results. Docs: https://www.reconeer.com/docs.html\n")
+		fmt.Fprintf(os.Stderr, "No results. Docs: https://www.reconeer.com/docs\n")
 	}
 }
 

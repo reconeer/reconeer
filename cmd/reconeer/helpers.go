@@ -9,46 +9,77 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
 
+// fetchDomain queries /api/domain/{domain}. Retries on transient (5xx / network)
+// failures up to 3 times with exponential backoff. Surfaces 401/402/429 cleanly.
 func fetchDomain(ctx context.Context, client *http.Client, domain, apiKey string) ([]SubdomainData, int, error) {
-
 	url := fmt.Sprintf("%s/api/domain/%s", defaultBaseURL, domain)
+	ua := fmt.Sprintf("reconeer-cli/%s (%s/%s)", version, runtime.GOOS, runtime.GOARCH)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, 0, err
+	var lastErr error
+	var lastStatus int
+	for attempt := 0; attempt < 3; attempt++ {
+		if attempt > 0 {
+			// Exponential backoff: 1s, 2s, 4s (clipped to 5s)
+			wait := time.Duration(1<<attempt) * time.Second
+			if wait > 5*time.Second {
+				wait = 5 * time.Second
+			}
+			select {
+			case <-ctx.Done():
+				return nil, lastStatus, ctx.Err()
+			case <-time.After(wait):
+			}
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, 0, err
+		}
+		req.Header.Set("User-Agent", ua)
+		req.Header.Set("Accept", "application/json")
+		if apiKey != "" {
+			req.Header.Set("Authorization", "Bearer "+apiKey)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue // retry on network error
+		}
+
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		lastStatus = resp.StatusCode
+
+		// Retry on 5xx
+		if resp.StatusCode >= 500 && resp.StatusCode < 600 {
+			lastErr = fmt.Errorf("server error %d: %s", resp.StatusCode, truncate(string(body), 200))
+			continue
+		}
+		// 4xx is fatal — don't retry
+		if resp.StatusCode >= 400 {
+			return nil, resp.StatusCode, fmt.Errorf("%s", truncate(string(body), 400))
+		}
+
+		var parsed apiDomainResponse
+		if err := json.Unmarshal(body, &parsed); err != nil {
+			return nil, resp.StatusCode, fmt.Errorf("invalid JSON response: %v", err)
+		}
+		return parsed.Subdomains, resp.StatusCode, nil
 	}
+	return nil, lastStatus, lastErr
+}
 
-	if apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+apiKey)
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
 	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, resp.StatusCode, err
-	}
-
-	if resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, fmt.Errorf("%s", string(body))
-	}
-
-	var parsed apiDomainResponse
-
-	if err := json.Unmarshal(body, &parsed); err != nil {
-		return nil, resp.StatusCode, err
-	}
-
-	return parsed.Subdomains, resp.StatusCode, nil
+	return s[:n] + "…"
 }
 
 func readDomainsFromFileOrStdin(path string) ([]string, error) {
@@ -115,7 +146,15 @@ func normalizeDomains(in []string) []string {
 }
 
 func printHelpHint() {
-	fmt.Fprintln(os.Stderr, "Usage: reconeer -d example.com | reconeer -dL domains.txt| use with key: reconeer -d post.ch -k f8af6b1a-79e8-xxxx-xxxx-7c9593674253")
+	fmt.Fprintln(os.Stderr, "Usage:")
+	fmt.Fprintln(os.Stderr, "  reconeer -d example.com")
+	fmt.Fprintln(os.Stderr, "  reconeer -d example.com -k YOUR_API_KEY")
+	fmt.Fprintln(os.Stderr, "  RECONEER_API_KEY=YOUR_KEY reconeer -d example.com")
+	fmt.Fprintln(os.Stderr, "  reconeer -dL scope.txt -silent -o out.txt")
+	fmt.Fprintln(os.Stderr, "  reconeer -d example.com -jsonl | jq -r '.subdomain'")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "Get a free API key: https://www.reconeer.com/register")
+	fmt.Fprintln(os.Stderr, "Full docs:          https://www.reconeer.com/docs")
 }
 
 func outputWriter(path string) (io.Writer, func(), error) {
@@ -152,18 +191,26 @@ func fatalIf(err error, silent bool, format string, args ...any) {
 }
 
 func handleAPIError(err error, status int, silent bool) {
-
 	if silent {
 		return
 	}
-
-	if status == http.StatusTooManyRequests {
-		fmt.Println("Rate limit reached.")
-		fmt.Println("Upgrade:", pricingURL)
-		return
+	switch status {
+	case http.StatusUnauthorized:
+		fmt.Fprintln(os.Stderr, "[!] Invalid or missing API key.")
+		fmt.Fprintln(os.Stderr, "    Get one at:", signupURL)
+	case http.StatusPaymentRequired:
+		// Server uses 402 for Premium-only endpoints (CSV export, bulk).
+		fmt.Fprintln(os.Stderr, "[!] This endpoint requires Premium.")
+		fmt.Fprintln(os.Stderr, "    Upgrade at:", pricingURL)
+	case http.StatusTooManyRequests:
+		fmt.Fprintln(os.Stderr, "[!] Daily quota reached.")
+		fmt.Fprintln(os.Stderr, "    Upgrade for unlimited:", pricingURL)
+	case http.StatusNotFound:
+		// Per-domain 404 just means no data yet — not an error worth dwelling on.
+		// Quiet by default; the main loop prints a summary at the end.
+	default:
+		fmt.Fprintln(os.Stderr, "[!] API error:", err)
 	}
-
-	fmt.Println(err)
 }
 
 type rateLimiter struct {
